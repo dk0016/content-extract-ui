@@ -16,17 +16,10 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import InsightsIcon from "@mui/icons-material/Insights";
 
 interface Props {
-  url: string;
-  summary: string;
-  points: string[];
-  date: string;
+  extracted?: { url: string; summary: string; points: string[]; date: string };
 }
-export default function ExtractedContentCard({
-  url,
-  summary,
-  points,
-  date,
-}: Props) {
+export default function ExtractedContentCard({ extracted }: Props) {
+  const { url, date, summary, points } = extracted || {};
   return (
     <Card
       variant="outlined"
@@ -88,11 +81,13 @@ export default function ExtractedContentCard({
           Key Points
         </Typography>
         <List dense>
-          {points.map((point, index) => (
-            <ListItem key={index} disablePadding>
-              <ListItemText primary={`• ${point}`} />
-            </ListItem>
-          ))}
+          {Array.isArray(points) &&
+            points.length &&
+            points.map((point, index) => (
+              <ListItem key={index} disablePadding>
+                <ListItemText primary={`• ${point}`} />
+              </ListItem>
+            ))}
         </List>
 
         <Typography

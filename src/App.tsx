@@ -1,4 +1,4 @@
-import { Button, Container, Stack, TextField } from "@mui/material";
+import { Button, Container, Stack, TextField, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import Header from "./components/Header";
 import ExtractedContentCard from "./components/ExtractedContentCard";
@@ -38,10 +38,22 @@ export default function App() {
     setIsValidUrl(validateUrl(url));
   }, [url]);
 
+  const ResetAll = () => {
+    setExtracted({
+      url: "",
+      summary: "",
+      points: [],
+      date: "",
+    });
+    setData([]);
+    setUrl("");
+  };
+
   const handleExtract = async () => {
     setLoading(true);
     await axios
       .post("https://content-extract-be.vercel.app/api/extract", { url })
+      // .post("http://localhost:9000/api/extract", { url })
       .then((response) => {
         const { extractedAt, keyPoints, summary, url: resUrl } = response.data;
         setExtracted({
@@ -56,6 +68,7 @@ export default function App() {
             url: resUrl,
             summary,
             date: moment(extractedAt).format("DD-MM-YYYY h:mm A"),
+            points: keyPoints,
           },
         ]);
 
@@ -84,29 +97,50 @@ export default function App() {
           disabled={loading}
           placeholder="https://example.com/article"
         />
-        <Button
-          style={{
-            cursor: isValidUrl ? "pointer" : "not-allowed",
-            backgroundColor: isValidUrl ? "#1976d2" : "#ccc",
+        <Typography
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
           }}
-          variant="contained"
-          onClick={handleExtract}
-          disabled={!isValidUrl || loading}
-          loading={loading}
-          loadingPosition="center"
         >
-          {!loading ? "Extract" : ""}
-        </Button>
+          <Button
+            style={{
+              cursor: isValidUrl ? "pointer" : "not-allowed",
+              backgroundColor: isValidUrl ? "#1976d2" : "#ccc",
+              width: "100px",
+              height: loading ? "30px" : "100%",
+            }}
+            variant="contained"
+            onClick={handleExtract}
+            disabled={!isValidUrl || loading}
+            loading={loading}
+            loadingPosition="center"
+          >
+            {!loading ? "Extract" : ""}
+          </Button>
+          <Button
+            style={{
+              cursor: url ? "pointer" : "not-allowed",
+              backgroundColor: url ? "#1976d2" : "#ccc",
+              width: "100px",
+              height: loading ? "30px" : "100%",
+              marginLeft: "10px",
+            }}
+            variant="contained"
+            disabled={!url || loading}
+            onClick={ResetAll}
+          >
+            {"RESET"}
+          </Button>
+        </Typography>
       </Stack>
-      {data.length > 0 && <ExtractedTable data={data} />}
+      {data.length > 0 && (
+        <ExtractedTable data={data} setExtracted={setExtracted} />
+      )}
 
       {extracted.url ? (
-        <ExtractedContentCard
-          url={extracted.url}
-          summary={extracted.summary}
-          points={extracted.points}
-          date={extracted.date}
-        />
+        <ExtractedContentCard extracted={extracted} />
       ) : (
         <ContentPlaceholder />
       )}
