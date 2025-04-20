@@ -41,10 +41,7 @@ export default function App() {
   const handleExtract = async () => {
     setLoading(true);
     await axios
-      .post(
-        "https://content-extract-7us0ht121-dks-projects-e80df377.vercel.app/api/extract",
-        { url }
-      )
+      .post("https://content-extract-be.vercel.app/api/extract", { url })
       .then((response) => {
         const { extractedAt, keyPoints, summary, url: resUrl } = response.data;
         setExtracted({
