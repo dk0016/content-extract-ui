@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from "react";
+import React, { useState, ChangeEvent } from "react";
 import EXIF from "exif-js";
 
 type Location = {
@@ -8,51 +8,32 @@ type Location = {
 
 export default function GeoLocationTest() {
   const [file, setFile] = useState<File | null>(null);
-  const [locationFromPhoto, setLocationFromPhoto] = useState<Location | null>(
-    null
-  );
-  const [locationPermission, setLocationPermission] = useState<boolean>(false);
+  const [location, setLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Ask for browser location permission on load
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocationPermission(true);
-          setError(null);
-        },
-        (err) => {
-          setLocationPermission(false);
-          setError("Please enable location access in your browser to proceed.");
-        }
-      );
-    } else {
-      setError("Geolocation is not supported by your browser.");
-    }
-  }, []);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
     setFile(selectedFile);
-    setLocationFromPhoto(null);
-    setError(null);
     extractGeoFromPhoto(selectedFile);
   };
 
-  const convertDMSToDD = (dms: any[], ref: string) => {
-    const [degrees, minutes, seconds] = dms.map((val) =>
-      typeof val === "object" && val.numerator && val.denominator
-        ? val.numerator / val.denominator
-        : val
-    );
+  // Converts DMS (Degrees, Minutes, Seconds) to Decimal Degrees
+  const convertDMSToDD = (dms: any[], ref: string): number => {
+    const [deg, min, sec] = dms.map((val) => {
+      if (
+        typeof val === "object" &&
+        val.numerator !== undefined &&
+        val.denominator !== undefined
+      ) {
+        return val.numerator / val.denominator;
+      }
+      return parseFloat(val);
+    });
 
-    let dd = degrees + minutes / 60 + seconds / 3600;
-    if (ref === "S" || ref === "W") {
-      dd = -dd;
-    }
+    let dd = deg + min / 60 + sec / 3600;
+    if (ref === "S" || ref === "W") dd = -dd;
     return dd;
   };
 
@@ -73,6 +54,13 @@ export default function GeoLocationTest() {
           const gpsLongitude = EXIF.getTag(this, "GPSLongitude");
           const gpsLongitudeRef = EXIF.getTag(this, "GPSLongitudeRef");
 
+          console.log("EXIF Tags", {
+            gpsLatitude,
+            gpsLatitudeRef,
+            gpsLongitude,
+            gpsLongitudeRef,
+          });
+
           if (
             gpsLatitude &&
             gpsLatitudeRef &&
@@ -82,12 +70,11 @@ export default function GeoLocationTest() {
             const latitude = convertDMSToDD(gpsLatitude, gpsLatitudeRef);
             const longitude = convertDMSToDD(gpsLongitude, gpsLongitudeRef);
 
-            setLocationFromPhoto({ latitude, longitude });
+            setLocation({ latitude, longitude });
             setError(null);
           } else {
-            setError(
-              "No GPS data found in the photo. Make sure your camera has location access enabled."
-            );
+            setLocation(null);
+            setError("No GPS data found in the photo.");
           }
         });
       };
@@ -97,42 +84,27 @@ export default function GeoLocationTest() {
   };
 
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <h2 className="text-lg font-bold mb-4">Upload Photo with Location</h2>
+    <div className="p-4">
+      <h2 className="text-lg font-bold mb-2">Upload Photo with Location</h2>
 
-      {!locationPermission && (
-        <p className="text-red-500 mb-4">
-          🚫 Location access is required. Please enable location in your browser
-          settings.
-        </p>
-      )}
-
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        disabled={!locationPermission}
-        className={`mb-2 ${
-          !locationPermission ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      />
+      <input type="file" accept="image/*" onChange={handleFileChange} />
 
       {file && (
-        <p className="text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600">
           Selected file: <strong>{file.name}</strong>
         </p>
       )}
 
-      {locationFromPhoto && (
+      {location && (
         <div className="mt-4">
           <p>
-            <strong>Latitude:</strong> {locationFromPhoto.latitude}
+            <strong>Latitude:</strong> {location.latitude}
           </p>
           <p>
-            <strong>Longitude:</strong> {locationFromPhoto.longitude}
+            <strong>Longitude:</strong> {location.longitude}
           </p>
           <a
-            href={`https://www.google.com/maps?q=${locationFromPhoto.latitude},${locationFromPhoto.longitude}`}
+            href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 underline"
@@ -142,7 +114,7 @@ export default function GeoLocationTest() {
         </div>
       )}
 
-      {error && <p className="text-red-500 mt-4">{error}</p>}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
     </div>
   );
 }
