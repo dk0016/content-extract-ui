@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import GeoLocationTest from "./components/GeolocationTest";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import GeoLocationCapture from "./components/GeoLocationCapture";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -17,6 +18,7 @@ root.render(
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/geo" element={<GeoLocationTest />} />
+        <Route path="/capture-geo" element={<GeoLocationCapture />} />
       </Routes>
     </Router>
     <ToastContainer />
